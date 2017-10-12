@@ -5,6 +5,7 @@ import java.util.ArrayList; //imports Java's ArrayList structure
 
 
 public class PSTNode<E> {
+	private int index = 0;
 	private String stringMotives; //string stored for each object
 	private int count; //counts the number of instances that character is in the input string
 	private ArrayList<PSTNode<E>> children = new ArrayList<PSTNode<E>>(); //next node
@@ -127,48 +128,67 @@ public class PSTNode<E> {
 		return empProb;
 	}
 	
-	public void calculateCondProbs() {
-		
+	public ArrayList<String> eliminateCondProbs(String input, int rValue, ArrayList<String> passes) {
+		if (passes.contains(stringMotives) == false && stringMotives.length()>1) { //handles base case, removes node if probability is below pMin cutoff
+			//System.out.println("Remove " + getString());
+			//set all attributes to null
+			stringMotives = null;
+			count = 0;
+			int index = 0;
+			while (stringMotives == null && index < children.size()) { //if a motive is null, remove the children
+				children.remove(index);
+				node = null; //should remove null? How do I delete the single node within this class?
+			}
+		} else {  }
+		if (hasChildren() == true) {
+			for (int i = 0; i < children.size(); i++) {
+				//System.out.println(stringMotives);
+				if (children.get(i).stringMotives != null) {
+					children.get(i).eliminateCondProbs(input, rValue, passes);
+				}
+			}
+		}
+		return passes;
 	}
 	
 	public void calcs(String input, ArrayList<Character> motives, ArrayList<Integer> tally, ArrayList<Double> probabs, ArrayList<Integer> counts) { //calculates probabilities in the tree based on next
 		char next;
-		int index = 0;
 		int length = 0;
+		int probCount = 0; 
+//		System.out.println("StringMotives: " + stringMotives);
 		if (stringMotives != null) {
-		if (stringMotives.length() != 0) {
-			length = stringMotives.length();
-		} else { return; }
-		System.out.println("String length: " + length);
-		for (int a = 0; a < input.length() - length; a++) { //loops through input string
-			if (input.substring(a, a+length).equals(stringMotives)) { //if input contains root
-				System.out.println("Input: " + stringMotives);
-				next = input.charAt(a+length);
-				System.out.println("Next: " + next); //next char
-				if (motives.contains(next)) {
-					System.out.println("Set: " + next + " to: " + (tally.get(motives.indexOf(next)) + 1));
-					tally.set(motives.indexOf(next), tally.get(motives.indexOf(next)) + 1);
+			if (stringMotives.equals(input.substring(input.length()-stringMotives.length()))) {  probCount = (count - 1);  }
+			else {  probCount = count;  }
+			if (stringMotives.length() != 0) {  length = stringMotives.length();  } 
+			else { return; }
+//			System.out.println("String length: " + length);
+			for (int a = 0; a < input.length() - length; a++) { //loops through input string to calculate tallies
+				if (input.substring(a, a+length).equals(stringMotives)) { //if input contains root
+//					System.out.println("Input: " + stringMotives);
+					next = input.charAt(a+length);
+//					System.out.println("Next: " + next); //next char
+					if (motives.contains(next)) {
+//						System.out.println("Set: " + next + " to: " + (tally.get(motives.indexOf(next)) + 1));
+						tally.set(motives.indexOf(next), tally.get(motives.indexOf(next)) + 1);
+					}
 				}
 			}
-		}
-		System.out.println("Motives: " + motives + " Tallies: " + tally);
-		for (int j = 0; j < probabs.size(); j++) {
-			System.out.println("Tallies " + tally.get(j) + " Counts " + counts.get(index));
-			probabs.set(j, (double)tally.get(j)/counts.get(index));
-			System.out.println("Prob calc: " + probabs.get(j));
-		}
-		setNextProbs(probabs);
-		System.out.println(nextProbs);
-		index++;
-		for (int t = 0; t < tally.size(); t++) {
-			tally.set(t, 0);
-			probabs.set(t,  0.0);
-		}
-		if (hasChildren()) {
-			for (int i = 0; i < children.size(); i++) {
-				children.get(i).calcs(input, motives, tally, probabs, counts);
+//			System.out.println("Motives: " + motives + " Tallies: " + tally);
+			for (int j = 0; j < probabs.size(); j++) {
+//				System.out.println("Tallies " + tally.get(j) + " Counts " + probCount);
+				probabs.set(j, (double)tally.get(j)/probCount);
+//				System.out.println("Prob calc: " + probabs.get(j));
 			}
-		}
+			setNextProbs(probabs);
+			for (int t = 0; t < tally.size(); t++) {
+				tally.set(t, 0);
+				probabs.set(t,  0.0);
+			}
+			if (hasChildren()) {
+				for (int i = 0; i < children.size(); i++) {
+					children.get(i).calcs(input, motives, tally, probabs, counts);
+				}
+			}
 		}
 	}
 	
@@ -181,46 +201,38 @@ public class PSTNode<E> {
 		}
 	}
 	
-	Character generate(String curr, ArrayList<Character> singleMotives) { //generate string based on probability
+	String generate(String curr, ArrayList<Character> singleMotives, int rvalue) { //generate string in PST node class based on probability
 		double rand = 0.0;
-		double prob = 0.0;
-		double nextProb = prob;
+		double prob = 0;
+		double nextProb = 0;
 		boolean found = false;
 		//takes in a string as input to decide on probabilities
-		char generatedStr = ' '; //instantiate generatedString
+		//look backwards in generated string
+		String generatedStr = ""; //instantiate generatedString
 		if (curr.equals(stringMotives)) { //if the input equals the stringMotive
+			nextProb = nextProbs.get(0);
 			//calculate based on probability what comes next
 			rand = Math.random(); //generates random number
 			for (int i = 0; i < nextProbs.size() - 1; i++) { //check probability ranges
-				if (prob == 0) {
-					nextProb = nextProbs.get(i);
-				}
-				System.out.println("Prob: " + prob + " Rand: " + rand + " nextProb: " + nextProb);
+//				System.out.println("Prob: " + prob + " Rand: " + rand + " nextProb: " + nextProb); //probability ranges
 				if (prob < rand && rand < nextProb) {
-					found = true;
-					generatedStr = singleMotives.get(i);
-					System.out.println("Char added: " + generatedStr);
+					generatedStr = singleMotives.get(i) + "";
+//					System.out.println("Char added: " + generatedStr);
 					return generatedStr;
 				} else { 
 					prob = nextProbs.get(i);
-					nextProb = prob + nextProbs.get(i+1);
-					
+					nextProb = nextProb + nextProbs.get(i+1);
 				}
 			} 
 		} else { //search through children until it is found
 			int index = 0;
 			while (!found && index < children.size()) {
-				System.out.println("Not found lol");
-				children.get(index).generate(curr, singleMotives); //search children
+//				System.out.println("Not found");
+				children.get(index).generate(curr, singleMotives, rvalue); //search children
 				index++;
 			}
-			if (found) {  
-				System.out.println("FOUND HERE");
-				return  generatedStr;  
-			} else {  
-				System.out.println("RETURN EMPTY STRING");   
-				return ' ';  
-			}
+			if (found) {  return  generatedStr;   }
+			else {   return "";  }
 		}
 		return generatedStr;
 	}

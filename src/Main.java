@@ -20,7 +20,7 @@ public class Main {
 		treeStruct.list();
 		System.out.println("-------------------------------------------------------");
 		System.out.println("Conditional Probability Elimination: ");
-		treeStruct.eliminateConditional("abracadabra", pMin, r);
+		treeStruct.eliminateConditional("abracadabra", r);
 		System.out.println("Tree structure after r elimination: ");
 		treeStruct.list();
 		System.out.println("-------------------------------------------------------");
@@ -29,23 +29,33 @@ public class Main {
 		treeStruct.printProbs();
 		System.out.println("-------------------------------------------------------");
 		System.out.println("Generate: ");
-		treeStruct.generateString();
+		treeStruct.generateString(L);
+		System.out.println("GeneratedString: " + treeStruct.getGeneratedString());
 		System.out.println("--------------------------------------------------------------------------------");
 		
-//		System.out.println("ABCCCDAADCDAABCAD");
-//		Tree<Character> treeStruct2 = new Tree<Character>();
-//		treeStruct2.search("abcccdaadcdaabcad", L);
-//		System.out.println("Tree structure before elimination: ");
-//		treeStruct2.list();
-//		System.out.println("-------------------------------------------------------");
-//		treeStruct2.eliminateEmpirical("abcccdaadcdaabcad", pMin); //first step: eliminate empirical probabilities based on pMin
-//		System.out.println("Tree structure after pMin elimination: ");
-//		treeStruct2.list();
-//		System.out.println("-------------------------------------------------------");
-//		System.out.println("Conditional Probability Elimination: ");
-//		treeStruct2.eliminateConditional("abracadabra", pMin, r);
-//		System.out.println("Tree structure after r elimination: ");
-//		treeStruct2.list();
+		System.out.println("ABCCCDAADCDAABCAD");
+		Tree<Character> treeStruct2 = new Tree<Character>();
+		treeStruct2.search("abcccdaadcdaabcad", L);
+		System.out.println("Tree structure before elimination: ");
+		treeStruct2.list();
+		System.out.println("-------------------------------------------------------");
+		treeStruct2.eliminateEmpirical("abcccdaadcdaabcad", pMin); //first step: eliminate empirical probabilities based on pMin
+		System.out.println("Tree structure after pMin elimination: ");
+		treeStruct2.list();
+		System.out.println("-------------------------------------------------------");
+		System.out.println("Conditional Probability Elimination: ");
+		treeStruct2.eliminateConditional("abcccdaadcdaabcad", r);
+		System.out.println("Tree structure after r elimination: ");
+		treeStruct2.list();
+		System.out.println("-------------------------------------------------------");
+		System.out.println("Probabilities for each next: ");
+		treeStruct2.calcNextProbs("abcccdaadcdaabcad");
+		treeStruct2.printProbs();
+		System.out.println("-------------------------------------------------------");
+		System.out.println("Generate: ");
+		treeStruct2.generateString(L);
+		System.out.println("GeneratedString: " + treeStruct2.getGeneratedString());
+		System.out.println("--------------------------------------------------------------------------------");
 		
 	}
 }
