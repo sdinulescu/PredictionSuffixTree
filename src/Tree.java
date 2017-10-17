@@ -3,22 +3,20 @@
 //Main functions of the program are listed here
 
 import java.util.ArrayList; //imports ArrayList
-
+import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class Tree<E> extends PSTNode<E>{
 	private PSTNode<E> root = new PSTNode<E>("", 0);
-	private ArrayList<String> probs = new ArrayList<String>();
 	private ArrayList<String> passes = new ArrayList<String>(); //contains all nodes that pass r threshold
-	
 	private ArrayList<Character> singleMotives = new ArrayList<Character>(); //holds single motive chars in string
 	private ArrayList<Double> probabilities = new ArrayList<Double>();
 	private ArrayList<Integer> counts = new ArrayList<Integer>();
 	private ArrayList<Integer> tallies = new ArrayList<Integer>();
 	
-	private ArrayList<Character> nexts = new ArrayList<Character>();
-	
-	private ArrayList<String> generatedString = new ArrayList<String>(); //generated string based on tree structure
 	String generated = "";
+	int N = 0; 
+	double g = 0.0;
 	
 	Tree() {} //default constructor 
 	
@@ -34,14 +32,13 @@ public class Tree<E> extends PSTNode<E>{
 		}
 		for(int i = 0; i <= input.length() - LValue; i++) {
 			sub = input.substring(0 + i, LValue + i);
-			root.search(sub); //search based on substring (which is based on LValue)
+			addToTree(sub);
+			//root.search(sub); //search based on substring (which is based on LValue)
 		}
 	}
 	
-	void addToTree(PSTNode<E> rootNode, String searchString) { //adds children
-		//System.out.println("Added to tree");
-		PSTNode<E> node = new PSTNode<E>(searchString, 1); //creates node with specific substring and count 1
-		rootNode.addChildren(node); //adds as a child to rootNode
+	void addToTree(String sub) { //adds children
+		root.search(sub);
 	}
 	
 	void list() { //lists out all nodes and children
@@ -178,7 +175,6 @@ public class Tree<E> extends PSTNode<E>{
 	
 	void printProbs() { //prints out the probabilities in the tree structure
 		root.printProbabilities();
-
 	}
 	
 	void generateString(int lvalue) { //generates a string
@@ -189,8 +185,8 @@ public class Tree<E> extends PSTNode<E>{
 		//if you have a string longer than L, send last two to generate of PST node
 		//if tree sends back an empty string, send the single
 		//if single doesn't work: go back to the empty string (just do a loop)
-		
-		for (int i = 0; i < 10; i++) {
+
+		for (int i = 0; i < 40 - generated.length(); i++) {
 			if (generated.length() > lvalue) {
 				matchStr = generated.substring(generated.length() - lvalue, generated.length());
 //				System.out.println("matchString1: " + matchStr);
@@ -213,13 +209,14 @@ public class Tree<E> extends PSTNode<E>{
 		}
 	}
 	void loopGenerate(String matchStr, String genStr, int lvalue) { //searches through root's children to try to match matchStr to the name of the child
-		for (int j = 0; j < root.getChildren().size(); j++) { //try with while loop
+		for (int j = 0; j < root.getChildren().size(); j++) {
 			if (matchStr.equals(root.getChildren().get(j).getString())) {
 //				System.out.println("FOUND IN CHILDREN!");
 				genStr = root.getChildren().get(j).generate(matchStr, singleMotives, lvalue);
 				if (genStr.equals("")) {
 //					System.out.println("genStr when re-generating from root: " + genStr);
-					genStr = root.generate(genStr, singleMotives, lvalue); //go back to empty string and re-generate?
+					//DECIDE BETWEEN EMPTY STRING OR BACKTRACKING
+					genStr = solveEmptyContext(genStr, lvalue, j);
 //					System.out.println("Empty string returned oh noooooooooooo");
 				}
 			} else { 
@@ -228,13 +225,114 @@ public class Tree<E> extends PSTNode<E>{
 //				System.out.println("genStr if not found: " + genStr);
 				if (genStr.equals("")) {
 //					System.out.println("genStr when re-generating from root: " + genStr);
-					genStr = root.generate(genStr, singleMotives, lvalue); //go back to empty string and re-generate?
+					genStr = solveEmptyContext(genStr, lvalue, j);
 //					System.out.println("Empty string returned oh noooooooooooo");
 				}
 //				System.out.println("MatchStr: " + matchStr + " GenStr: " + genStr);
 			}
 			generated = generated + genStr;
 		}
+	}
+	
+	String solveEmptyContext(String genStr, int lvalue, int j) {
+		double var = Math.random(); 
+		if (0 <= var && var <= 0.3) { 
+//			System.out.println("Generate from empty string");
+			genStr = root.generate(genStr, singleMotives, lvalue); //go back to empty string and re-generate
+//			System.out.println("GenStr = " + genStr);
+			return genStr;
+		} else { //roll back
+//			System.out.println("Roll back and generate");
+			String curr = generated.substring(generated.length() - 1, generated.length());
+//			System.out.println("Curr = " + curr);
+			genStr = root.getChildren().get(j).generate(curr, singleMotives, lvalue);
+//			System.out.println("GenStr = " + genStr);
+			return genStr;
+		}
+	}
+	
+	void checkForSmoothing() { //checks whether or not it needs smoothing and implements it if it does
+		for (int i = 0; i < root.getChildren().size(); i++) {
+			if (root.getChildren().get(i).needsSmoothing() == true) {
+				implementSmoothing(i);
+				if (root.getChildren().get(i).hasChildren()) {
+					for (int j = 0; j < root.getChildren().get(i).getChildren().size(); j++) {
+						if (root.getChildren().get(i).needsSmoothing() == true) {
+							implementSmoothing(i);
+						}
+					}
+				}
+			} else { }
+		}
+	}
+	
+	void implementSmoothing(int i) { //implements smoothing
+//		System.out.println("IMPLEMENT SMOOTHING");
+		//TODO look up formula for smoothing and implement
+		//calculate a random number g
+		root.getChildren().get(i).calcSmoothing(g);
+		if (root.getChildren().get(i).hasChildren()) {
+			for (int j = 0; j < root.getChildren().get(i).getChildren().size(); j++) {
+				root.getChildren().get(i).getChildren().get(j).calcSmoothing(g);
+			}
+		}
+	}
+	
+	void calcValuesForSmoothing(String input) { //calculates g and N values for smoothing purposes
+		N = input.length();
+		double Nval = (double)1/N;
+		Random num = new Random();
+		double rand = num.nextDouble(); //found on https://stackoverflow.com/questions/363681/how-do-i-generate-random-integers-within-a-specific-range-in-java
+//		System.out.println(rand);
+//		System.out.println(rand*Nval);
+		g = rand * Nval;
+//		System.out.println((double)1/N + " " + g);
+		
+	}
+	
+	
+	void solveInfiniteLooping(int countBack, int times) {
+		//search through generated string
+		ArrayList<String> strings = new ArrayList<String>();
+		checkStrings(strings, countBack);
+		int counter = 1;
+		int primaryIndex = 0;
+		int finalIndex = 0;
+		for (int i = 0; i < strings.size() - 1; i++) {
+			if (strings.get(i).equals(strings.get(i+1))) {
+//				System.out.println("EQUALS: " + strings.get(i) + " " + strings.get(i+1));
+				if (counter == 1) {
+					primaryIndex = i;
+				}
+//				if (counter >= times) {
+					finalIndex = i+1;
+				//}
+				counter++;
+//				System.out.println("counter = " + counter);
+			}
+		}
+		if (counter >= times) {
+//			System.out.println("Infinite looping: "+ "i + init: " + strings.get(i) + " i+1: " + strings.get(i+1));
+//			System.out.println("Counter: " + counter);
+//			System.out.println("primary: " + primaryIndex + " " + strings.get(primaryIndex) + " final: " + finalIndex + " " + strings.get(finalIndex));
+			String generatedSub = generated.substring(0, generated.indexOf(strings.get(finalIndex)));
+//			System.out.println("generatedSub: " + generatedSub);
+			generated = generatedSub;
+			generateString(countBack);
+			System.out.println("Generated: " + generated);
+			strings.clear();
+			checkStrings(strings, countBack);
+		} else { System.out.println("No infinite looping occurs"); }
+		
+	}
+	
+	void checkStrings(ArrayList<String> strings, int countBack) {
+		int index = 0;
+		while (index < generated.length() - countBack) {
+			strings.add(generated.substring(index, index + countBack));
+			index += countBack;
+		}
+		System.out.println("STRINGS: " + strings);
 	}
 }
 

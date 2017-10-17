@@ -192,7 +192,7 @@ public class PSTNode<E> {
 		}
 	}
 	
-	public void printProbabilities() {
+	public void printProbabilities() { //prints conditional probabilities
 		System.out.println(stringMotives + ": " + getNextProbs());
 		if (hasChildren()) {
 			for (int i = 0; i < children.size(); i++) {
@@ -201,7 +201,23 @@ public class PSTNode<E> {
 		}
 	}
 	
-	String generate(String curr, ArrayList<Character> singleMotives, int rvalue) { //generate string in PST node class based on probability
+	public boolean needsSmoothing() { //boolean to determine whether or not the probabilities need smoothing
+		if (getNextProbs().contains((double)0.0)) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+	
+	public void calcSmoothing(double gval) { //smoothing algorithm
+		//System.out.println(getNextProbs());
+		for (int i = 0; i < nextProbs.size(); i++) {
+			nextProbs.set(i, ((1 - (gval * count))*getNextProbs().get(i) + gval)) ;
+		}
+		//System.out.println("New probs: " + nextProbs);
+	}
+	
+	public String generate(String curr, ArrayList<Character> singleMotives, int lvalue) { //generate string in PST node class based on probability
 		double rand = 0.0;
 		double prob = 0;
 		double nextProb = 0;
@@ -228,7 +244,7 @@ public class PSTNode<E> {
 			int index = 0;
 			while (!found && index < children.size()) {
 //				System.out.println("Not found");
-				children.get(index).generate(curr, singleMotives, rvalue); //search children
+				children.get(index).generate(curr, singleMotives, lvalue); //search children
 				index++;
 			}
 			if (found) {  return  generatedStr;   }
