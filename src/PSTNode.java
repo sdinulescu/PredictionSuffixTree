@@ -200,15 +200,7 @@ public class PSTNode<E> {
 			}
 		}
 	}
-	
-	public boolean needsSmoothing() { //boolean to determine whether or not the probabilities need smoothing
-		if (getNextProbs().contains((double)0.0)) {
-			return true;
-		} else {
-			return false;
-		}
-	}
-	
+
 	public void calcSmoothing(double gval) { //smoothing algorithm
 		//System.out.println(getNextProbs());
 		for (int i = 0; i < nextProbs.size(); i++) {
@@ -226,6 +218,8 @@ public class PSTNode<E> {
 		//look backwards in generated string
 		String generatedStr = ""; //instantiate generatedString
 		if (curr.equals(stringMotives)) { //if the input equals the stringMotive
+			found = true;
+			//System.out.println("Found");
 			nextProb = nextProbs.get(0);
 			//calculate based on probability what comes next
 			rand = Math.random(); //generates random number
@@ -247,8 +241,14 @@ public class PSTNode<E> {
 				children.get(index).generate(curr, singleMotives, lvalue); //search children
 				index++;
 			}
-			if (found) {  return  generatedStr;   }
-			else {   return "";  }
+			if (found) { 
+				//System.out.println("HELLLLLOOOOOOOOO"); 
+				return  generatedStr;   
+			}
+			else { 
+				//System.out.println("Generating from empty"); 
+				return "";  
+			}
 		}
 		return generatedStr;
 	}

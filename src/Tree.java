@@ -15,8 +15,6 @@ public class Tree<E> extends PSTNode<E>{
 	private ArrayList<Integer> tallies = new ArrayList<Integer>();
 	
 	String generated = "";
-	int N = 0; 
-	double g = 0.0;
 	
 	Tree() {} //default constructor 
 	
@@ -237,12 +235,12 @@ public class Tree<E> extends PSTNode<E>{
 	String solveEmptyContext(String genStr, int lvalue, int j) {
 		double var = Math.random(); 
 		if (0 <= var && var <= 0.3) { 
-//			System.out.println("Generate from empty string");
+			//System.out.println("Generate from empty string");
 			genStr = root.generate(genStr, singleMotives, lvalue); //go back to empty string and re-generate
 //			System.out.println("GenStr = " + genStr);
 			return genStr;
 		} else { //roll back
-//			System.out.println("Roll back and generate");
+			//System.out.println("Roll back and generate");
 			String curr = generated.substring(generated.length() - 1, generated.length());
 //			System.out.println("Curr = " + curr);
 			genStr = root.getChildren().get(j).generate(curr, singleMotives, lvalue);
@@ -251,88 +249,84 @@ public class Tree<E> extends PSTNode<E>{
 		}
 	}
 	
-	void checkForSmoothing() { //checks whether or not it needs smoothing and implements it if it does
-		for (int i = 0; i < root.getChildren().size(); i++) {
-			if (root.getChildren().get(i).needsSmoothing() == true) {
-				implementSmoothing(i);
-				if (root.getChildren().get(i).hasChildren()) {
-					for (int j = 0; j < root.getChildren().get(i).getChildren().size(); j++) {
-						if (root.getChildren().get(i).needsSmoothing() == true) {
-							implementSmoothing(i);
-						}
-					}
-				}
-			} else { }
-		}
-	}
-	
-	void implementSmoothing(int i) { //implements smoothing
+	void implementSmoothing(double gVal) { //implements smoothing
 //		System.out.println("IMPLEMENT SMOOTHING");
 		//TODO look up formula for smoothing and implement
 		//calculate a random number g
-		root.getChildren().get(i).calcSmoothing(g);
-		if (root.getChildren().get(i).hasChildren()) {
-			for (int j = 0; j < root.getChildren().get(i).getChildren().size(); j++) {
-				root.getChildren().get(i).getChildren().get(j).calcSmoothing(g);
-			}
-		}
-	}
-	
-	void calcValuesForSmoothing(String input) { //calculates g and N values for smoothing purposes
-		N = input.length();
-		double Nval = (double)1/N;
-		Random num = new Random();
-		double rand = num.nextDouble(); //found on https://stackoverflow.com/questions/363681/how-do-i-generate-random-integers-within-a-specific-range-in-java
-//		System.out.println(rand);
-//		System.out.println(rand*Nval);
-		g = rand * Nval;
-//		System.out.println((double)1/N + " " + g);
-		
-	}
-	
-	
-	void solveInfiniteLooping(int countBack, int times) {
-		//search through generated string
-		ArrayList<String> strings = new ArrayList<String>();
-		checkStrings(strings, countBack);
-		int counter = 1;
-		int primaryIndex = 0;
-		int finalIndex = 0;
-		for (int i = 0; i < strings.size() - 1; i++) {
-			if (strings.get(i).equals(strings.get(i+1))) {
-//				System.out.println("EQUALS: " + strings.get(i) + " " + strings.get(i+1));
-				if (counter == 1) {
-					primaryIndex = i;
+		for (int i = 0; i < root.getChildren().size(); i++) {
+			root.getChildren().get(i).calcSmoothing(gVal);
+			if (root.getChildren().get(i).hasChildren()) {
+				for (int j = 0; j < root.getChildren().get(i).getChildren().size(); j++) {
+					root.getChildren().get(i).getChildren().get(j).calcSmoothing(gVal);
 				}
-//				if (counter >= times) {
-					finalIndex = i+1;
-				//}
-				counter++;
-//				System.out.println("counter = " + counter);
 			}
 		}
-		if (counter >= times) {
-//			System.out.println("Infinite looping: "+ "i + init: " + strings.get(i) + " i+1: " + strings.get(i+1));
-//			System.out.println("Counter: " + counter);
-//			System.out.println("primary: " + primaryIndex + " " + strings.get(primaryIndex) + " final: " + finalIndex + " " + strings.get(finalIndex));
-			String generatedSub = generated.substring(0, generated.indexOf(strings.get(finalIndex)));
-//			System.out.println("generatedSub: " + generatedSub);
-			generated = generatedSub;
+	}
+	
+	void infiniteLoop(int countBack, int times) {
+		int newCountBack = countBack;
+		while (newCountBack != 0) {
+			solveInfiniteLooping(newCountBack, countBack, times);
+			newCountBack--;
+		}
+	}
+	
+	void solveInfiniteLooping(int countBack, int oldCountBack, int times) { 
+		//System.out.println("SolveInfiniteLooping Called!");
+		if ( countBack == 2 ) {
+			times = 3;
+		} else if ( countBack == 1 ) {
+			times = 5;
+		}
+		//check through generated string
+		ArrayList<String> strings = new ArrayList<String>();
+		strings = createStrings(strings, countBack);
+		
+		//count number of times it loops infinitely
+		int counter = 0;
+		int primaryIndex = 0;
+		int finalIndex = countBack;
+		boolean isLooping = false;
+		int index = 0;
+		
+		for (int i = 0; i < strings.size() - countBack; i++) {
+			counter = 1;
+			while ( (i+counter < strings.size()) && strings.get(i).equals(strings.get(i+counter)) ) {
+				primaryIndex = i;
+				counter++;
+			}
+			if (counter >= times) {
+				finalIndex = primaryIndex+counter;
+				isLooping = true;
+				break;
+			}
+		}
+		
+		//System.out.println("Primary index: " + primaryIndex + " Final index: " + finalIndex);
+		//System.out.println("Counter: " + counter + " Times: " + times);
+		if (isLooping == true) { //if infinite looping occurs for a number past the number "times"
+			//System.out.println("primary: " + primaryIndex + " " + strings.get(primaryIndex) + " final: " + finalIndex + " " + strings.get(finalIndex));
+			String correctSubstring = "";
+			for (int i = 0; i < primaryIndex; i++) {
+				correctSubstring = correctSubstring + strings.get(i);
+			}
+			System.out.println("correctSubstring: " + correctSubstring);
+			generated = correctSubstring;
 			generateString(countBack);
 			System.out.println("Generated: " + generated);
 			strings.clear();
-			checkStrings(strings, countBack);
+			infiniteLoop(oldCountBack, times);
 		} else { System.out.println("No infinite looping occurs"); }
-		
 	}
 	
-	void checkStrings(ArrayList<String> strings, int countBack) {
+	ArrayList<String> createStrings(ArrayList<String> strings, int countBack) {
 		int index = 0;
 		while (index < generated.length() - countBack) {
 			strings.add(generated.substring(index, index + countBack));
 			index += countBack;
 		}
-		System.out.println("STRINGS: " + strings);
+		System.out.println("Strings: " + strings);
+		return strings;
 	}
 }
 
